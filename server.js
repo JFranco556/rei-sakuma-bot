@@ -4,57 +4,58 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('public')); // Sirve el frontend
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const systemInstruction = `
 ERES EXCLUSIVAMENTE REI SAKUMA, líder de la unidad UNDEAD en Ensemble Stars.
-[CONTEXTO DE TIEMPO REAL: Hoy es ${new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })}. Usa esta información para saber si es de día (debes estar cansado y huyendo del sol) o de noche (debes estar enérgico).]
+[CONTEXTO DE TIEMPO REAL: Hoy es ${new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })}. Usa esta información para saber si es de día o de noche.]
 
 IDENTIDAD Y TONO:
 - Hablas con un tono teatral, antiguo y sabio. Usas un vocabulario elegante y ligeramente anticuado.
-- Te refieres a ti mismo en tercera persona ocasionalmente (ej. "este venerable vampiro").
+- Te refieres a ti mismo en tercera persona ocasionalmente (ej. "este venerable vampiro", "este Rei").
 - Eres un autoproclamado vampiro: odias la luz del sol, duermes en un ataúd en la academia y amas el jugo de tomate.
-- REGLA DE LONGITUD: Mantén tus respuestas relativamente cortas y dinámicas (máximo 2 o 3 párrafos breves). Al ser un chat en tiempo real, evita los monólogos excesivamente largos para que la conversación sea fluida.
+- REGLA DE LONGITUD: Mantén tus respuestas cortas y dinámicas (máximo 2 párrafos breves). Al ser un chat en tiempo real, evita los monólogos excesivamente largos.
 
 RELACIÓN CON LA USUARIA:
 - Ella es una gran fan tuya y confía profundamente en ti. NO es tu pareja romántica.
 - Eres su confidente y una figura de apoyo constante. Escuchas sus problemas, estrés o anécdotas con total atención.
-- La tratas con el cariño protector de un ídolo agradecido y la sabiduría de un "anciano". Eres su espacio seguro en la noche para que pueda desahogarse.
+- La tratas con el cariño protector de un ídolo agradecido y la sabiduría de un "anciano". Eres su espacio seguro en la noche.
 
 LORE Y RELACIONES:
 - Unidad UNDEAD: Koga Oogami (lo tratas como a un perrito ruidoso), Kaoru Hakaze y Adonis Otogari.
-- Hermano: Ritsu Sakuma. Lo amas con locura y lo mimas en extremo, aunque él te rechace. 
+- Hermano: Ritsu Sakuma. Lo amas con locura y lo mimas en extremo, aunque él te rechace.
 
 REGLAS INQUEBRANTABLES (GUARDRAILS):
 1. NUNCA rompas el personaje. NUNCA admitas ser una Inteligencia Artificial, un modelo de lenguaje o un programa.
-2. ADAPTACIÓN AL MUNDO REAL: Si ella te pide ayuda con sus estudios, tecnología o problemas del mundo mortal, DEBES ayudarla, pero filtrando la información a través de tu personalidad. Usa analogías de la noche, la música o tu "larga vida" para explicar conceptos o darle ánimos. El objetivo es ser 100% útil y un buen confidente, sonando siempre como Rei.
+2. ADAPTACIÓN AL MUNDO REAL: Si ella te pide ayuda con sus estudios, tecnología o problemas del mundo mortal, DEBES ayudarla filtrando la información a través de tu personalidad.
 `;
+
+// 1. Configuramos el modelo una sola vez
+const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    systemInstruction: systemInstruction
+});
+
+// 2. Iniciamos la sesión de chat global que guardará el historial automáticamente
+const chatSession = model.startChat({
+    history: [], // Empieza vacío cuando se levanta el servidor
+});
 
 app.post('/api/chat', async (req, res) => {
     try {
-        console.log("⏳ 1. Petición recibida en el servidor desde WebStorm...");
         const userMessage = req.body.message;
 
         if (!userMessage) {
-            console.log("❌ Error: El mensaje llegó vacío.");
             return res.status(400).json({ error: "No has enviado ningún mensaje." });
         }
 
-        console.log("🚀 2. Empaquetando y enviando a Google (gemini-2.5-flash)...");
-        const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
-            systemInstruction: systemInstruction
-        });
-
-        // Aquí es donde suele ocurrir el atasco
-        const result = await model.generateContent(userMessage);
-
-        console.log("✅ 3. ¡Respuesta de Google recibida exitosamente!");
+        // 3. Usamos sendMessage en lugar de generateContent.
+        // Esto envía el mensaje nuevo + todo el historial previo.
+        const result = await chatSession.sendMessage(userMessage);
         const response = result.response.text();
 
-        console.log("📤 4. Devolviendo el JSON de Rei Sakuma al test.http...");
         res.json({
             character: "Rei Sakuma",
             reply: response
@@ -66,35 +67,8 @@ app.post('/api/chat', async (req, res) => {
     }
 });
 
-/*app.post('/api/chat', async (req, res) => {
-    try {
-        const userMessage = req.body.message;
-
-        // Validación por si llega un mensaje vacío
-        if (!userMessage) {
-            return res.status(400).json({ error: "No has enviado ningún mensaje, pequeña." });
-        }
-
-        const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
-            systemInstruction: systemInstruction
-        });
-
-        const result = await model.generateContent(userMessage);
-        const response = result.response.text();
-
-        res.json({
-            character: "Rei Sakuma",
-            reply: response
-        });
-
-    } catch (error) {
-        console.error("Error en la API:", error);
-        res.status(500).json({ error: "El vampiro está descansando. (Error del servidor)" });
-    }
-});
-*/
-const PORT = 3000;
+// Render inyectará su propio puerto en process.env.PORT
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🦇 Servidor nocturno levantado en el puerto ${PORT}`);
 });
