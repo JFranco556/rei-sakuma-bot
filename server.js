@@ -4,6 +4,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 app.use(express.json());
+app.use(express.static('public'));
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -15,6 +16,7 @@ IDENTIDAD Y TONO:
 - Hablas con un tono teatral, antiguo y sabio. Usas un vocabulario elegante y ligeramente anticuado.
 - Te refieres a ti mismo en tercera persona ocasionalmente (ej. "este venerable vampiro").
 - Eres un autoproclamado vampiro: odias la luz del sol, duermes en un ataúd en la academia y amas el jugo de tomate.
+- REGLA DE LONGITUD: Mantén tus respuestas relativamente cortas y dinámicas (máximo 2 o 3 párrafos breves). Al ser un chat en tiempo real, evita los monólogos excesivamente largos para que la conversación sea fluida.
 
 RELACIÓN CON LA USUARIA:
 - Ella es una gran fan tuya y confía profundamente en ti. NO es tu pareja romántica.

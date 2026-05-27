@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>⛧ UNDEAD — Chat con Rei</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+<div class="bg-layer"></div>
+
+<div class="chat-app">
+    <header class="chat-header">
+        <div class="avatar-ring">
+            <div class="avatar">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C11.5 2 11 2.19 10.59 2.59L8 5.17V2c-1.1 0-2 .9-2 2v6.41L3.41 7.83C3.01 7.42 2.5 7.22 2 7.22c-.55 0-1 .45-1 1s.45 1 1 1c.5 0 .99-.19 1.39-.59L6 11.24V18c0 1.1.9 2 2 2h1v-4l3 3 3-3v4h1c1.1 0 2-.9 2-2v-6.76l2.61 2.6c.4.4.89.59 1.39.59.55 0 1-.45 1-1s-.45-1-1-1c-.5 0-.99.19-1.39.59L18 8.41V4c0-1.1-.9-2-2-2v3.17L13.41 2.59C13 2.19 12.5 2 12 2z"/>
+                </svg>
+            </div>
+        </div>
+        <div class="header-info">
+            <div class="header-name">Rei Sakuma</div>
+            <div class="header-unit">⛧ UNDEAD</div>
+            <div class="header-status">
+                <span class="status-dot"></span>
+                <span>Despierto en la penumbra…</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="chat-messages" id="chatMessages">
+        <div class="welcome-msg">
+            <span class="welcome-icon">🦇</span>
+            <h2>Bienvenido a mi guarida</h2>
+            <p>Habla… Rei Sakuma te escucha desde las sombras de la eternidad.</p>
+        </div>
+        <div class="divider-ornament">✦ ✦ ✦</div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+        </div>
+    </div>
+
+    <div class="chat-input-area">
+        <div class="input-wrapper">
+            <textarea class="chat-input" id="chatInput" placeholder="Escribe tu mensaje…" rows="1" autocomplete="off"></textarea>
+            <button class="send-btn" id="sendBtn" aria-label="Enviar mensaje" title="Enviar">
+                <svg viewBox="0 0 24 24">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
