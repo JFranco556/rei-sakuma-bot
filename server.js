@@ -42,6 +42,18 @@ const model = genAI.getGenerativeModel({
     systemInstruction: systemInstruction
 });
 
+// Ruta para obtener todo el historial guardado en la base de datos
+app.get('/api/chat/history', async (req, res) => {
+    try {
+        // Buscamos todos los mensajes ordenados del más antiguo al más reciente
+        const historyDocs = await Message.find().sort({ timestamp: 1 });
+        res.json(historyDocs);
+    } catch (error) {
+        console.error("🚨 Error al recuperar el historial visual:", error);
+        res.status(500).json({ error: "No se pudo cargar el historial." });
+    }
+});
+
 app.post('/api/chat', async (req, res) => {
     try {
         const userMessage = req.body.message;

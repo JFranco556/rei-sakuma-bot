@@ -102,3 +102,23 @@ async function enviarMensaje() {
         agregarBurbuja("Fallo de comunicación con el ataúd.", 'bot');
     }
 }
+
+// 5. Cargar historial al abrir la página
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const respuesta = await fetch('/api/chat/history');
+        const historial = await respuesta.json();
+
+        // Recorremos los mensajes guardados y los dibujamos
+        historial.forEach(msg => {
+            if (msg.role === 'user') {
+                agregarBurbuja(msg.content, 'user');
+            } else if (msg.role === 'model') {
+                agregarBurbuja(msg.content, 'bot'); // Tu clase para Rei es 'bot', aunque en la BD sea 'model'
+            }
+        });
+
+    } catch (error) {
+        console.error("No se pudo despertar la memoria del ataúd:", error);
+    }
+});
