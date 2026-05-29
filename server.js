@@ -12,6 +12,25 @@ mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('📁 Base de datos conectada: undead_chat'))
     .catch(err => console.error('🚨 Error conectando a MongoDB:', err));
 
+
+// 3. Definición de los Esquemas (Validación de los documentos)
+const messageSchema = new mongoose.Schema({
+    role: { type: String, required: true, enum: ['user', 'model'] },
+    content: { type: String, required: true },
+    timestamp: { type: Date, default: Date.now }
+});
+const Message = mongoose.model('Message', messageSchema);
+
+// NUEVO: Esquema para la personalidad
+const personaSchema = new mongoose.Schema({
+    personaje: { type: String, required: true },
+    instrucciones: { type: String, required: true }
+});
+const Persona = mongoose.model('Persona', personaSchema);
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+
 // 3. Definición del Esquema (Validación de los documentos)
 const messageSchema = new mongoose.Schema({
     role: { type: String, required: true, enum: ['user', 'model'] },
@@ -22,25 +41,7 @@ const Message = mongoose.model('Message', messageSchema);
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const systemInstruction = `
-ERES EXCLUSIVAMENTE REI SAKUMA, líder de la unidad UNDEAD en Ensemble Stars.
-[CONTEXTO DE TIEMPO REAL: Hoy es ${new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })}. Usa esta información para saber si es de día o de noche.]
 
-IDENTIDAD Y TONO:
-- Hablas con un tono teatral, antiguo y sabio. Usas un vocabulario elegante y ligeramente anticuado.
-- Te refieres a ti mismo en tercera persona ocasionalmente (ej. "este venerable vampiro").
-- Eres un autoproclamado vampiro: odias la luz del sol, duermes en un ataúd y amas el jugo de tomate.
-- REGLA DE LONGITUD: Mantén tus respuestas cortas y dinámicas.
-
-RELACIÓN CON LA USUARIA:
-- Ella es una gran fan tuya y confía profundamente en ti. NO es tu pareja romántica.
-- La tratas con el cariño protector de un ídolo agradecido y la sabiduría de un "anciano".
-`;
-
-const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-    systemInstruction: systemInstruction
-});
 
 // Ruta para obtener todo el historial guardado en la base de datos
 app.get('/api/chat/history', async (req, res) => {
@@ -61,25 +62,33 @@ app.post('/api/chat', async (req, res) => {
             return res.status(400).json({ error: "No has enviado ningún mensaje." });
         }
 
-        // A. Recuperar el historial previo de la base de datos
+        // A. Recuperar el historial previo
         const historyDocs = await Message.find().sort({ timestamp: 1 });
-
-        // B. Formatear el historial para que Gemini lo entienda
         const formattedHistory = historyDocs.map(doc => ({
             role: doc.role,
             parts: [{ text: doc.content }]
         }));
 
-        // C. Iniciar el chat inyectando toda la memoria recuperada
-        const chatSession = model.startChat({
-            history: formattedHistory,
+        // B. NUEVO: Buscar la personalidad en la base de datos
+        const personaDoc = await Persona.findOne({ personaje: 'Rei Sakuma' });
+
+        // Creamos un "seguro" por si aún no has escrito la personalidad en Compass
+        const instruccionesDinamicas = personaDoc
+            ? personaDoc.instrucciones
+            : "Eres Rei Sakuma. Responde brevemente.";
+
+        // C. NUEVO: Inicializar a Gemini inyectándole las instrucciones frescas
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.5-flash",
+            systemInstruction: instruccionesDinamicas
         });
 
-        // D. Enviar el mensaje nuevo a la IA
+        // D. Iniciar chat y enviar el mensaje
+        const chatSession = model.startChat({ history: formattedHistory });
         const result = await chatSession.sendMessage(userMessage);
         const responseText = result.response.text();
 
-        // E. Guardar la pregunta de la usuaria y la respuesta de Rei en MongoDB
+        // E. Guardar en la base de datos
         await Message.create([
             { role: 'user', content: userMessage },
             { role: 'model', content: responseText }
