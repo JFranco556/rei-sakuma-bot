@@ -1,0 +1,21 @@
+{
+  "name": "Rei Sakuma Chat",
+  "short_name": "Rei Chat",
+  "description": "Chat con Rei Sakuma - UNDEAD",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#120e18",
+  "theme_color": "#1a1423",
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

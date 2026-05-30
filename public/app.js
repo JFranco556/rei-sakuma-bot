@@ -122,3 +122,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("No se pudo despertar la memoria del ataúd:", error);
     }
 });
+
+// 6. Registro del Service Worker (PWA)
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+                console.log('PWA: Service Worker registrado exitosamente', registration.scope);
+            })
+            .catch(err => {
+                console.log('PWA: Fallo al registrar el Service Worker', err);
+            });
+    });
+}
