@@ -42,6 +42,24 @@ app.get('/api/chat/history', async (req, res) => {
     }
 });
 
+// Herramienta para actualizar la personalidad dinámicamente
+const tools = [{
+    functionDeclarations: [{
+        name: "agregar_regla_comportamiento",
+        description: "Usa esta herramienta SOLO cuando el usuario te pida explícitamente que cambies tu comportamiento, que aprendas una nueva regla, o que dejes de hacer algo. NO la uses para conversar normalmente.",
+        parameters: {
+            type: "OBJECT",
+            properties: {
+                nueva_regla: {
+                    type: "STRING",
+                    description: "La nueva regla de comportamiento a agregar."
+                }
+            },
+            required: ["nueva_regla"]
+        }
+    }]
+}];
+
 app.post('/api/chat', async (req, res) => {
     try {
         const userMessage = req.body.message;
@@ -77,15 +95,45 @@ app.post('/api/chat', async (req, res) => {
             ? personaDoc.instrucciones
             : "Eres Rei Sakuma. Responde brevemente.";
 
-        // C. NUEVO: Inicializar a Gemini inyectándole las instrucciones frescas
+        // C. NUEVO: Inicializar a Gemini inyectándole las instrucciones frescas y las herramientas
         const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
-            systemInstruction: instruccionesDinamicas
+            systemInstruction: instruccionesDinamicas,
+            tools: tools
         });
 
         // D. Iniciar chat y enviar el mensaje
         const chatSession = model.startChat({ history: formattedHistory });
-        const result = await chatSession.sendMessage(userMessage);
+        let result = await chatSession.sendMessage(userMessage);
+
+        // --- MANEJO DE FUNCTION CALLING ---
+        const functionCalls = result.response.functionCalls();
+        if (functionCalls && functionCalls.length > 0) {
+            const call = functionCalls[0];
+            if (call.name === "agregar_regla_comportamiento") {
+                const nuevaRegla = call.args.nueva_regla;
+                
+                // Actualizar en la base de datos concatenando la nueva regla
+                const instruccionesActualizadas = instruccionesDinamicas + "\n- Nueva regla dinámica: " + nuevaRegla;
+                await Persona.updateOne(
+                    { personaje: 'Rei Sakuma' }, 
+                    { instrucciones: instruccionesActualizadas },
+                    { upsert: true } // Por si no existe, lo crea
+                );
+
+                console.log(`✨ Rei aprendió una nueva regla: ${nuevaRegla}`);
+
+                // Enviar confirmación al modelo para que genere su respuesta final
+                result = await chatSession.sendMessage([{
+                    functionResponse: {
+                        name: "agregar_regla_comportamiento",
+                        response: { success: true, guardado: true }
+                    }
+                }]);
+            }
+        }
+        // -----------------------------------
+
         const responseText = result.response.text();
 
         // E. Guardar en la base de datos
