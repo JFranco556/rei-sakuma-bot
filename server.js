@@ -63,6 +63,8 @@ const tools = [{
 app.post('/api/chat', async (req, res) => {
     try {
         const userMessage = req.body.message;
+        const mode = req.body.mode || 'rei';
+        
         if (!userMessage) {
             return res.status(400).json({ error: "No has enviado ningún mensaje." });
         }
@@ -87,19 +89,27 @@ app.post('/api/chat', async (req, res) => {
         }
         // -----------------------------
 
-        // B. NUEVO: Buscar la personalidad en la base de datos
-        const personaDoc = await Persona.findOne({ personaje: 'Rei Sakuma' });
+        // B. NUEVO: Buscar la personalidad en la base de datos dependiendo del modo
+        const nombrePersonaje = mode === 'narrador' ? 'Narrador' : 'Rei Sakuma';
+        const personaDoc = await Persona.findOne({ personaje: nombrePersonaje });
 
         // Creamos un "seguro" por si aún no has escrito la personalidad en Compass
-        const instruccionesDinamicas = personaDoc
+        let instruccionesDinamicas = personaDoc
             ? personaDoc.instrucciones
-            : "Eres Rei Sakuma. Responde brevemente.";
+            : `Eres ${nombrePersonaje}.`;
+            
+        let activeTools = tools;
+
+        // Si el usuario activó el modo narrador, apagamos las herramientas de Rei
+        if (mode === 'narrador') {
+            activeTools = undefined; 
+        }
 
         // C. NUEVO: Inicializar a Gemini inyectándole las instrucciones frescas y las herramientas
         const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
             systemInstruction: instruccionesDinamicas,
-            tools: tools
+            tools: activeTools
         });
 
         // D. Iniciar chat y enviar el mensaje

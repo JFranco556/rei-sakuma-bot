@@ -3,6 +3,20 @@ const chatMessages = document.getElementById('chatMessages');
 const chatInput = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
 const typingIndicator = document.getElementById('typingIndicator');
+const modeSwitch = document.getElementById('modeSwitch');
+const modeLabel = document.getElementById('modeLabel');
+const modeLabelAlt = document.getElementById('modeLabelAlt');
+
+// Evento para cambiar visualmente las etiquetas del toggle
+modeSwitch.addEventListener('change', function() {
+    if (this.checked) {
+        modeLabel.classList.add('alt');
+        modeLabelAlt.classList.remove('alt');
+    } else {
+        modeLabel.classList.remove('alt');
+        modeLabelAlt.classList.add('alt');
+    }
+});
 
 // 2. Funciones de interfaz
 function obtenerHoraActual() {
@@ -76,12 +90,14 @@ async function enviarMensaje() {
     // Mostrar indicador de carga
     mostrarTyping(true);
 
+    const currentMode = modeSwitch.checked ? 'narrador' : 'rei';
+
     try {
-        // Enviar la petición al servidor local
+        // Enviar la petición al servidor local con el modo seleccionado
         const respuesta = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: texto })
+            body: JSON.stringify({ message: texto, mode: currentMode })
         });
 
         const datos = await respuesta.json();
@@ -93,7 +109,8 @@ async function enviarMensaje() {
         if (datos.error) {
             agregarBurbuja("Error de conexión.", 'bot');
         } else {
-            agregarBurbuja(datos.reply, 'bot');
+            const tipoBurbuja = currentMode === 'narrador' ? 'narrador' : 'bot';
+            agregarBurbuja(datos.reply, tipoBurbuja);
         }
 
     } catch (error) {
