@@ -64,10 +64,23 @@ app.post('/api/chat', async (req, res) => {
 
         // A. Recuperar el historial previo
         const historyDocs = await Message.find().sort({ timestamp: 1 });
-        const formattedHistory = historyDocs.map(doc => ({
+        let formattedHistory = historyDocs.map(doc => ({
             role: doc.role,
             parts: [{ text: doc.content }]
         }));
+
+        // --- BLINDAJE ANTI-ERRORES ---
+        // Buscar dónde está el primer mensaje de usuario
+        const primerUsuarioIndex = formattedHistory.findIndex(msg => msg.role === 'user');
+        
+        if (primerUsuarioIndex === -1) {
+            // Si no hay mensajes de usuario en la BD, mandamos el historial vacío
+            formattedHistory = []; 
+        } else if (primerUsuarioIndex > 0) {
+            // Si el historial empieza con un bot, cortamos esa parte y empezamos desde el usuario
+            formattedHistory = formattedHistory.slice(primerUsuarioIndex);
+        }
+        // -----------------------------
 
         // B. NUEVO: Buscar la personalidad en la base de datos
         const personaDoc = await Persona.findOne({ personaje: 'Rei Sakuma' });
