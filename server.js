@@ -30,19 +30,6 @@ const Persona = mongoose.model('Persona', personaSchema);
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-
-// 3. Definición del Esquema (Validación de los documentos)
-const messageSchema = new mongoose.Schema({
-    role: { type: String, required: true, enum: ['user', 'model'] },
-    content: { type: String, required: true },
-    timestamp: { type: Date, default: Date.now }
-});
-const Message = mongoose.model('Message', messageSchema);
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-
-
 // Ruta para obtener todo el historial guardado en la base de datos
 app.get('/api/chat/history', async (req, res) => {
     try {
